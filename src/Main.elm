@@ -1,11 +1,31 @@
 module Main exposing (Model(..), Msg(..), main, rgb, update, view)
 
+import Array exposing (Array)
 import Browser
 import Browser.Events
 import Html exposing (Html, div, pre, span, text)
 import Html.Attributes as Attr
+import Html.Events exposing (onMouseEnter)
 import Time exposing (Posix)
-import Array exposing (Array)
+import Html exposing (b)
+
+
+xRange = 50
+yRange = 25
+
+type CharElem
+    = CharElem
+        { x : Int
+        , y : Int
+        , value : Int
+        }
+
+
+charElem : Int -> Int -> Int -> CharElem
+charElem x y v =
+    CharElem { x = x, y = y, value = v }
+
+
 
 
 type Model
@@ -20,9 +40,12 @@ main =
 init : flags -> ( Model, Cmd Msg )
 init _ =
     let
-        xss : Array (Array Int)
-        xss =
-            1 |> Array.repeat 32 |> Array.repeat 32
+      xss =
+        List.range 0 yRange 
+          |> List.map (\y -> 
+            List.range 0 xRange |> List.map (\x -> 
+            charAlem x y ((x + y) modBy 255)))
+        |> List.map Array.fromList |> Array.fromList             
     in
     ( Model xss, Cmd.none )
 
@@ -113,14 +136,14 @@ manyStars =
             )
 
 
-oneCharOfTint : Int -> Html Msg
-oneCharOfTint tint =
+oneCharOfTint : Int -> Int -> Html Msg
+oneCharOfTint index tint =
     span [ gray tint ] [ text "*" ]
 
 
 appendBr : Array (Html Msg) -> Array (Html Msg)
 appendBr html =
-    Array.append (Array.fromList ([Html.br [] []])) html 
+    Array.append (Array.fromList [ Html.br [] [] ]) html
 
 
 view : Model -> Html Msg
@@ -133,6 +156,6 @@ view (Model xss) =
                     (\xs ->
                         xs |> Array.map oneCharOfTint |> appendBr
                     )
-                    |> Array.foldr Array.append Array.empty
+                |> Array.foldr Array.append Array.empty
     in
     div [ Attr.style "font-family" "monospace" ] (stars |> Array.toList)
