@@ -1,29 +1,65 @@
-module Main exposing (Model(..), Msg(..), main, update, view, rgb)
+module Main exposing (Model(..), Msg(..), main, rgb, update, view)
 
 import Browser
+import Browser.Events
 import Html exposing (Html, div, pre, span, text)
 import Html.Attributes as Attr
-import Random
+import Time exposing (Posix)
+import Array exposing (Array)
 
 
 type Model
-    = Model
+    = Model (Array (Array Int))
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox { init = Model, update = update, view = view }
+    Browser.element { init = init, update = update, view = view, subscriptions = subscriptions }
+
+
+init : flags -> ( Model, Cmd Msg )
+init _ =
+    let
+        xss : Array (Array Int)
+        xss =
+            1 |> Array.repeat 32 |> Array.repeat 32
+    in
+    ( Model xss, Cmd.none )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Browser.Events.onAnimationFrame OnAnimationFrame
 
 
 type Msg
-    = NoOp
+    = OnAnimationFrame Posix
 
 
-update : Msg -> Model -> Model
-update msg _ =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    let
+        noCmd m =
+            ( m, Cmd.none )
+    in
     case msg of
-        NoOp ->
-            Model
+        OnAnimationFrame _ ->
+            case model of
+                Model xss ->
+                    xss |> Array.map (Array.map updateCell) |> (\m -> ( Model m, Cmd.none ))
+
+
+updateCell : Int -> Int
+updateCell i =
+    let
+        next =
+            i + 1
+    in
+    if next > 255 then
+        0
+
+    else
+        next
 
 
 rgb : Int -> Int -> Int -> String
@@ -51,7 +87,7 @@ gray tint =
 
 charXY : Int -> Int -> Html Msg
 charXY x y =
-    span [ gray (x + (y * 255))] [ text "*" ]
+    span [ gray (x + (y * 255)) ] [ text "*" ]
 
 
 andThen : (a -> List b) -> List a -> List b
@@ -77,6 +113,26 @@ manyStars =
             )
 
 
+oneCharOfTint : Int -> Html Msg
+oneCharOfTint tint =
+    span [ gray tint ] [ text "*" ]
+
+
+appendBr : Array (Html Msg) -> Array (Html Msg)
+appendBr html =
+    Array.append (Array.fromList ([Html.br [] []])) html 
+
+
 view : Model -> Html Msg
-view _ =
-    div [ Attr.style "font-family" "monospace" ] manyStars
+view (Model xss) =
+    let
+        stars : Array (Html Msg)
+        stars =
+            xss
+                |> Array.map
+                    (\xs ->
+                        xs |> Array.map oneCharOfTint |> appendBr
+                    )
+                    |> Array.foldr Array.append Array.empty
+    in
+    div [ Attr.style "font-family" "monospace" ] (stars |> Array.toList)
