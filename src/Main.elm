@@ -13,7 +13,7 @@ message : Int -> String
 message index =
     let
         string =
-            "🎄 Best wishes for 2022 ! :)"
+            "🎄 Best wishes for 2022, touch me ! :)"
 
         safeIndex =
             modBy (String.length string) index
@@ -28,7 +28,7 @@ xRange =
 
 yRange : number
 yRange =
-    16
+    32
 
 
 type CharElem
@@ -89,7 +89,7 @@ update msg model =
         OnAnimationFrame _ ->
             case model of
                 Model x xss ->
-                    case modBy 1 x of
+                    case modBy 4 x of
                         0 ->
                             xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model (x + 1) m, Cmd.none ))
 
@@ -237,7 +237,7 @@ viewChar (CharElem { x, y, value, messageChar }) =
                 ( 255.0, messageChar )
 
             else
-                ( value, charOfValue value )
+                ( value, value / 128 |> floor |> message )
     in
     span
         [ gray tint
