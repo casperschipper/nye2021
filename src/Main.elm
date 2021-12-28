@@ -177,7 +177,7 @@ return x =
 
 viewChar : CharElem -> Html Msg
 viewChar (CharElem { x, y, value }) =
-    span [ gray value, onMouseEnter (OnMouseEnter x y) ] [ text (charOfValue value) ]
+    span [ gray value, onMouseEnter (OnMouseEnter x y), Attr.style "width" "0.7em", Attr.style "display" "inline-block"  ] [ text (charOfValue value) ]
 
 
 charOfValue : Float -> String
@@ -186,33 +186,34 @@ charOfValue flt =
         int =
             floor flt
     in
-    case int // 32 of
-        0 ->
-            "`"
+    Char.fromCode int |> String.fromChar
+    -- case int // 32 of
+    --     0 ->
+    --         "`"
 
-        1 ->
-            "\\"
+    --     1 ->
+    --         "\\"
 
-        2 ->
-            "/"
+    --     2 ->
+    --         "/"
 
-        3 ->
-            ","
+    --     3 ->
+    --         ","
 
-        4 ->
-            "-"
+    --     4 ->
+    --         "-"
 
-        5 ->
-            ","
+    --     5 ->
+    --         ","
 
-        6 ->
-            ","
+    --     6 ->
+    --         ","
 
-        7 ->
-            "."
+    --     7 ->
+    --         "."
 
-        _ ->
-            "*"
+    --     _ ->
+    --         "*"
 
 
 appendBr : Array (Html Msg) -> Array (Html Msg)
