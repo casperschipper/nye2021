@@ -1,22 +1,34 @@
-module Main exposing (Model(..), Msg(..), main, rgb, update, view)
+module Main exposing (Model(..), Msg(..), main, message, rgb, update, view)
 
 import Array exposing (Array)
 import Browser
 import Browser.Events
 import Html exposing (Html, b, div, span, text)
 import Html.Attributes as Attr
-import Html.Events exposing (onMouseEnter)
+import Html.Events exposing (onClick, onMouseEnter)
 import Time exposing (Posix)
+
+
+message : Int -> String
+message index =
+    let
+        string =
+            "🎄 Best wishes for 2022 ! :)"
+
+        safeIndex =
+            modBy (String.length string) index
+    in
+    string |> String.toList |> Array.fromList |> Array.get safeIndex |> Maybe.withDefault '*' |> String.fromChar
 
 
 xRange : number
 xRange =
-    64
+    16
 
 
 yRange : number
 yRange =
-    32
+    16
 
 
 type CharElem
@@ -24,12 +36,13 @@ type CharElem
         { x : Int
         , y : Int
         , value : Float
+        , messageChar : String
         }
 
 
-charElem : Int -> Int -> Float -> CharElem
-charElem x y v =
-    CharElem { x = x, y = y, value = v }
+charElem : Int -> Int -> Float -> String -> CharElem
+charElem x y v m =
+    CharElem { x = x, y = y, value = v, messageChar = m }
 
 
 type Model
@@ -51,7 +64,7 @@ init _ =
                         List.range 0 xRange
                             |> List.map
                                 (\x ->
-                                    charElem x y 0
+                                    charElem x y 0 (message (x + (y * xRange)))
                                 )
                     )
                 |> List.map Array.fromList
@@ -78,7 +91,7 @@ update msg model =
                 Model x xss ->
                     case modBy 1 x of
                         0 ->
-                            xss |> Array.map (Array.map updateCell) |> (\m -> ( Model (x + 1) m, Cmd.none ))
+                            xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model (x + 1) m, Cmd.none ))
 
                         _ ->
                             ( Model (x + 1) xss, Cmd.none )
@@ -97,23 +110,64 @@ updateAtIndex f idx array =
 resetCell : Int -> Int -> Model -> Model
 resetCell cellX cellY (Model t xss) =
     let
-        myF (CharElem { x, y }) =
-            CharElem { x = x, y = y, value = 255.0 }
+        myF (CharElem { x, y, messageChar }) =
+            CharElem { x = x, y = y, value = 262144.0, messageChar = messageChar }
     in
     Model t (updateAtIndex (\ys -> updateAtIndex myF cellX ys) cellY xss)
 
 
-updateCell : CharElem -> CharElem
-updateCell (CharElem { x, y, value }) =
+getCoordinate : Int -> Int -> Array (Array CharElem) -> CharElem
+getCoordinate x y arr =
+    Array.get (modBy yRange y) arr
+        |> Maybe.andThen (\xarr -> Array.get (modBy xRange x) xarr)
+        |> Maybe.withDefault (charElem 0 0 0.0 "*")
+
+
+calcNeighbours : Int -> Int -> Array (Array CharElem) -> Float
+calcNeighbours x y arr =
+    let
+        top =
+            getCoordinate x (y - 1) arr
+
+        topL =
+            getCoordinate (x - 1) (y - 1) arr
+
+        topR =
+            getCoordinate (x + 1) (y - 1) arr
+
+        right =
+            getCoordinate (x + 1) y arr
+
+        bottom =
+            getCoordinate x (y + 1) arr
+
+        bottomL =
+            getCoordinate (x - 1) (y + 1) arr
+
+        bottomR =
+            getCoordinate (x + 1) (y + 1) arr
+
+        left =
+            getCoordinate (x - 1) y arr
+
+        attenuate =
+            0.662
+    in
+    ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 8.0) * attenuate))
+        + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 4.0) * attenuate))
+
+
+updateCell : Array (Array CharElem) -> CharElem -> CharElem
+updateCell array (CharElem { x, y, value, messageChar }) =
     let
         next =
-            value - 0.1
+            calcNeighbours x y array
     in
-    if next < 0 then
-        charElem x y 0
+    if (next < 0) || (next > 262144) then
+        charElem x y -1 messageChar
 
     else
-        charElem x y next
+        charElem x y next messageChar
 
 
 rgb : Int -> Int -> Int -> String
@@ -125,13 +179,11 @@ rgb red green blue =
     ( f red, f green, f blue ) |> (\( r, g, b ) -> [ "rgb(", r, ",", g, ",", b, ")" ] |> String.concat)
 
 
-
-
 gray : Float -> Html.Attribute Msg
 gray x =
     let
         xf =
-            x / 255.0
+            x / 262144.0
 
         tau =
             2 * pi
@@ -140,35 +192,34 @@ gray x =
             xf * tau * 5
 
         ( r, g, b ) =
-            ( sin w, sin (w + (tau / 3.0)), sin (w + (tau / 3.0)) )
+            ( sin (w * 1.0), sin ((w * 1.5) + (tau / 3.0)), sin ((w * 3.0) + (tau / 3.0)) )
 
         int255 i =
             i * 255.0 |> floor
     in
     Attr.style "color" (rgb (int255 r) (int255 g) (int255 b))
 
+
+
 {-
-andThen : (a -> List b) -> List a -> List b
-andThen f xs =
-    xs |> List.map f |> List.concat
-    
+   andThen : (a -> List b) -> List a -> List b
+   andThen f xs =
+       xs |> List.map f |> List.concat
 
 
-return : a -> List a
-return x =
-    [ x ]
-    
+
+   return : a -> List a
+   return x =
+       [ x ]
+
 -}
-
 -- viewChar2 : CharElem -> Html Msg
 -- viewChar2 (CharElem { x, y, value }) =
 --     let
 --         xstr =
 --             String.fromInt x
-
 --         ystr =
 --             String.fromInt y
-
 --         vstr =
 --             String.fromFloat value
 --     in
@@ -176,44 +227,59 @@ return x =
 
 
 viewChar : CharElem -> Html Msg
-viewChar (CharElem { x, y, value }) =
-    span [ gray value, onMouseEnter (OnMouseEnter x y), Attr.style "width" "0.7em", Attr.style "display" "inline-block"  ] [ text (charOfValue value) ]
+viewChar (CharElem { x, y, value, messageChar }) =
+    let
+        ( tint, str ) =
+            if value < 32.0 then
+                ( 0, messageChar )
+
+            else if value == 0.0 then
+                ( 255.0, messageChar )
+
+            else
+                ( value, charOfValue value )
+    in
+    span
+        [ gray tint
+
+        --, onMouseEnter (OnMouseEnter x y)
+        , onClick (OnMouseEnter x y)
+        , Attr.style "width" "1.4em"
+        , Attr.style "line-height" "1.4em"
+        , Attr.style "display" "inline-block"
+        ]
+        [ text str ]
 
 
 charOfValue : Float -> String
 charOfValue flt =
     let
         int =
-            floor flt
+            floor flt + 32 |> modBy 262144
     in
     Char.fromCode int |> String.fromChar
-    -- case int // 32 of
-    --     0 ->
-    --         "`"
 
-    --     1 ->
-    --         "\\"
 
-    --     2 ->
-    --         "/"
 
-    --     3 ->
-    --         ","
-
-    --     4 ->
-    --         "-"
-
-    --     5 ->
-    --         ","
-
-    --     6 ->
-    --         ","
-
-    --     7 ->
-    --         "."
-
-    --     _ ->
-    --         "*"
+-- case int // 32 of
+--     0 ->
+--         "`"
+--     1 ->
+--         "\\"
+--     2 ->
+--         "/"
+--     3 ->
+--         ","
+--     4 ->
+--         "-"
+--     5 ->
+--         ","
+--     6 ->
+--         ","
+--     7 ->
+--         "."
+--     _ ->
+--         "*"
 
 
 appendBr : Array (Html Msg) -> Array (Html Msg)
@@ -233,14 +299,13 @@ view (Model t xss) =
                     )
                 |> Array.foldr Array.append Array.empty
     in
-    div []
-        [ Html.p [] [ text (String.fromInt t) ]
-        , div
-            [ Attr.style "font-family" "monospace"
-            , Attr.style "font-size" "24px"
-            , Attr.style "overflow" "hide"
-            , Attr.style "width" "100%"
-            , Attr.style "height" "100%"
-            ]
-            (stars |> Array.toList)
+    div
+        [ Attr.style "font-family" "monospace"
+        , Attr.style "font-size" "36px"
+        , Attr.style "line-height" "1.4em"
+        , Attr.style "overflow-y" "hide"
+        , Attr.style "overflow-x" "hide"
+        , Attr.style "width" "100%"
+        , Attr.style "height" "100%"
         ]
+        (stars |> Array.toList)
