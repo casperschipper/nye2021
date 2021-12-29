@@ -3,9 +3,9 @@ module Main exposing (Model(..), Msg(..), main, message, rgb, update, view)
 import Array exposing (Array)
 import Browser
 import Browser.Events
-import Html exposing (Html, b, div, span, text)
+import Html exposing (Html, a, b, div, span, text)
 import Html.Attributes as Attr
-import Html.Events exposing (onClick,onMouseEnter)
+import Html.Events exposing (onClick, onMouseEnter)
 import Time exposing (Posix)
 
 
@@ -28,7 +28,7 @@ xRange =
 
 yRange : number
 yRange =
-    12
+    15
 
 
 type CharElem
@@ -178,8 +178,8 @@ calcNeighbours x y arr =
         attenuate =
             0.34
     in
-    ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate)) +
-    ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
+    ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate))
+        + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
 
 
 updateCell : Array (Array CharElem) -> CharElem -> CharElem
@@ -282,7 +282,6 @@ viewChar (CharElem { x, y, value, messageChar }) =
     in
     span
         [ gray tint
-
         , onMouseEnter (OnMouseEnter x y)
         , onClick (OnMouseEnter x y)
         , Attr.style "width" "1.4em"
@@ -328,6 +327,19 @@ appendBr html =
     Array.append (Array.fromList [ Html.br [] [] ]) html
 
 
+dropFirstAndLast : Array a -> Array a
+dropFirstAndLast arr =
+    let
+        n =
+            Array.length arr
+    in
+    if n < 3 then
+        arr
+
+    else
+        Array.slice 1 -1 arr
+
+
 view : Model -> Html Msg
 view (Model t xss) =
     let
@@ -336,9 +348,9 @@ view (Model t xss) =
             xss
                 |> Array.map
                     (\xs ->
-                        xs |> Array.map viewChar |> appendBr
+                        xs |> Array.map viewChar |> dropFirstAndLast |> appendBr
                     )
-                |> Array.foldr Array.append Array.empty
+                |> dropFirstAndLast |> Array.foldr Array.append Array.empty 
     in
     div
         [ Attr.style "font-family" "monospace"
