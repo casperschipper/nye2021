@@ -23,12 +23,12 @@ message index =
 
 xRange : number
 xRange =
-    18
+    64
 
 
 yRange : number
 yRange =
-    15
+    50
 
 
 type CharElem
@@ -94,7 +94,7 @@ update msg model =
         OnAnimationFrame _ ->
             case model of
                 Model x xss ->
-                    case modBy 8 x of
+                    case modBy 1 x of
                         0 ->
                             xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model (x + 1) m, Cmd.none ))
 
@@ -176,7 +176,7 @@ calcNeighbours x y arr =
             getCoordinate (x - 1) y arr
 
         attenuate =
-            0.34
+            0.365
     in
     ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate))
         + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
@@ -284,8 +284,7 @@ viewChar (CharElem { x, y, value, messageChar }) =
         [ gray tint
         , onMouseEnter (OnMouseEnter x y)
         , onClick (OnMouseEnter x y)
-        , Attr.style "width" "1.4em"
-        , Attr.style "line-height" "1.4em"
+        , Attr.style "width" "1.0em"
         , Attr.style "display" "inline-block"
         ]
         [ text str ]
@@ -350,12 +349,13 @@ view (Model t xss) =
                     (\xs ->
                         xs |> Array.map viewChar |> dropFirstAndLast |> appendBr
                     )
-                |> dropFirstAndLast |> Array.foldr Array.append Array.empty 
+                |> dropFirstAndLast
+                |> Array.foldr Array.append Array.empty
     in
     div
         [ Attr.style "font-family" "monospace"
-        , Attr.style "font-size" "36px"
-        , Attr.style "line-height" "1.4em"
+        , Attr.style "font-size" "12px"
+        , Attr.style "line-height" "0.9em"
         , Attr.style "overflow-y" "hide"
         , Attr.style "overflow-x" "hide"
         , Attr.style "width" "100%"
