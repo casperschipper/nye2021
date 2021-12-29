@@ -5,7 +5,7 @@ import Browser
 import Browser.Events
 import Html exposing (Html, b, div, span, text)
 import Html.Attributes as Attr
-import Html.Events exposing (onClick, onMouseEnter)
+import Html.Events exposing (onClick,onMouseEnter)
 import Time exposing (Posix)
 
 
@@ -13,7 +13,7 @@ message : Int -> String
 message index =
     let
         string =
-            "🎄 Best wishes for 2022, touch me ! :)"
+            "🎄.Best.Wishes.For.2022!"
 
         safeIndex =
             modBy (String.length string) index
@@ -23,12 +23,12 @@ message index =
 
 xRange : number
 xRange =
-    16
+    18
 
 
 yRange : number
 yRange =
-    32
+    12
 
 
 type CharElem
@@ -43,6 +43,11 @@ type CharElem
 charElem : Int -> Int -> Float -> String -> CharElem
 charElem x y v m =
     CharElem { x = x, y = y, value = v, messageChar = m }
+
+
+borderElem : CharElem
+borderElem =
+    CharElem { x = -1, y = -1, value = 0.0, messageChar = "" }
 
 
 type Model
@@ -89,7 +94,7 @@ update msg model =
         OnAnimationFrame _ ->
             case model of
                 Model x xss ->
-                    case modBy 4 x of
+                    case modBy 8 x of
                         0 ->
                             xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model (x + 1) m, Cmd.none ))
 
@@ -111,7 +116,7 @@ resetCell : Int -> Int -> Model -> Model
 resetCell cellX cellY (Model t xss) =
     let
         myF (CharElem { x, y, messageChar }) =
-            CharElem { x = x, y = y, value = 262144.0, messageChar = messageChar }
+            CharElem { x = x, y = y, value = 2 ^ 20 |> toFloat, messageChar = messageChar }
     in
     Model t (updateAtIndex (\ys -> updateAtIndex myF cellX ys) cellY xss)
 
@@ -121,6 +126,26 @@ getCoordinate x y arr =
     Array.get (modBy yRange y) arr
         |> Maybe.andThen (\xarr -> Array.get (modBy xRange x) xarr)
         |> Maybe.withDefault (charElem 0 0 0.0 "*")
+
+
+e : Float
+e =
+    2.718281828459045
+
+
+cosh : Float -> Float
+cosh x =
+    (e ^ x + e ^ -x) / 2.0
+
+
+sinh : Float -> Float
+sinh x =
+    (e ^ x - e ^ -x) / 2.0
+
+
+tanh : Float -> Float
+tanh x =
+    sinh x / cosh x
 
 
 calcNeighbours : Int -> Int -> Array (Array CharElem) -> Float
@@ -151,23 +176,39 @@ calcNeighbours x y arr =
             getCoordinate (x - 1) y arr
 
         attenuate =
-            0.662
+            0.34
     in
-    ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 8.0) * attenuate))
-        + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 4.0) * attenuate))
+    ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate)) +
+    ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
 
 
 updateCell : Array (Array CharElem) -> CharElem -> CharElem
 updateCell array (CharElem { x, y, value, messageChar }) =
     let
-        next =
-            calcNeighbours x y array
+        old =
+            charElem x y value messageChar
     in
-    if (next < 0) || (next > 262144) then
-        charElem x y -1 messageChar
+    case ( x, y ) of
+        ( 0, _ ) ->
+            old
 
-    else
-        charElem x y next messageChar
+        ( _, 0 ) ->
+            old
+
+        ( xx, yy ) ->
+            if (xx == xRange) || (yy == yRange) then
+                old
+
+            else
+                let
+                    next =
+                        calcNeighbours x y array
+                in
+                if (next < 0) || (next > 262144) then
+                    charElem x y -1 messageChar
+
+                else
+                    charElem x y next messageChar
 
 
 rgb : Int -> Int -> Int -> String
@@ -242,7 +283,7 @@ viewChar (CharElem { x, y, value, messageChar }) =
     span
         [ gray tint
 
-        --, onMouseEnter (OnMouseEnter x y)
+        , onMouseEnter (OnMouseEnter x y)
         , onClick (OnMouseEnter x y)
         , Attr.style "width" "1.4em"
         , Attr.style "line-height" "1.4em"
