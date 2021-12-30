@@ -23,12 +23,12 @@ message index =
 
 xRange : number
 xRange =
-    64
+    60
 
 
 yRange : number
 yRange =
-    50
+    36
 
 
 type CharElem
@@ -49,19 +49,23 @@ borderElem : CharElem
 borderElem =
     CharElem { x = -1, y = -1, value = 0.0, messageChar = "" }
 
+type alias Dimensions = (Int,Int)
 
 type Model
-    = Model Int (Array (Array CharElem))
+    = Model Dimensions Int (Array (Array CharElem))
 
 
-main : Program () Model Msg
+main : Program (Int,Int) Model Msg
 main =
     Browser.element { init = init, update = update, view = view, subscriptions = subscriptions }
 
 
-init : flags -> ( Model, Cmd Msg )
-init _ =
+init : ( Int, Int ) -> ( Model, Cmd Msg )
+init ( w, h ) =
     let
+        _ =
+            Debug.log "w,h" ( w, h )
+
         xss =
             List.range 0 yRange
                 |> List.map
@@ -75,7 +79,7 @@ init _ =
                 |> List.map Array.fromList
                 |> Array.fromList
     in
-    ( Model 0 xss, Cmd.none )
+    ( Model (w,h) 0 xss, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -93,13 +97,13 @@ update msg model =
     case msg of
         OnAnimationFrame _ ->
             case model of
-                Model x xss ->
+                Model wh x xss ->
                     case modBy 1 x of
                         0 ->
-                            xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model (x + 1) m, Cmd.none ))
+                            xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model wh (x + 1) m, Cmd.none ))
 
                         _ ->
-                            ( Model (x + 1) xss, Cmd.none )
+                            ( Model wh (x + 1) xss, Cmd.none )
 
         OnMouseEnter x y ->
             ( resetCell x y model, Cmd.none )
@@ -113,12 +117,12 @@ updateAtIndex f idx array =
 
 
 resetCell : Int -> Int -> Model -> Model
-resetCell cellX cellY (Model t xss) =
+resetCell cellX cellY (Model wh t xss) =
     let
         myF (CharElem { x, y, messageChar }) =
             CharElem { x = x, y = y, value = 2 ^ 20 |> toFloat, messageChar = messageChar }
     in
-    Model t (updateAtIndex (\ys -> updateAtIndex myF cellX ys) cellY xss)
+    Model  wh t (updateAtIndex (\ys -> updateAtIndex myF cellX ys) cellY xss)
 
 
 getCoordinate : Int -> Int -> Array (Array CharElem) -> CharElem
@@ -353,7 +357,7 @@ dropFirstAndLast arr =
 
 
 view : Model -> Html Msg
-view (Model t xss) =
+view (Model wh t xss) =
     let
         stars : Array (Html Msg)
         stars =
