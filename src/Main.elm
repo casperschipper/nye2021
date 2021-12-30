@@ -176,7 +176,7 @@ calcNeighbours x y arr =
             getCoordinate (x - 1) y arr
 
         attenuate =
-            0.365
+            0.359
     in
     ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate))
         + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
