@@ -266,6 +266,14 @@ gray x =
 --     in
 --     span [ gray value, onMouseEnter (OnMouseEnter x y) ] [ text (String.join " " [ "  -", xstr, ystr, vstr, "-  " ]) ]
 
+combi : Float -> String
+combi x =
+    let xx = x / 128.0 in
+    if xx > 128.0 then
+       charOfValue xx
+    else 
+       xx |> floor |> message
+
 
 viewChar : CharElem -> Html Msg
 viewChar (CharElem { x, y, value, messageChar }) =
@@ -278,7 +286,7 @@ viewChar (CharElem { x, y, value, messageChar }) =
                 ( 255.0, messageChar )
 
             else
-                ( value, value / 128 |> floor |> message )
+                ( value, combi value )
     in
     span
         [ gray tint
