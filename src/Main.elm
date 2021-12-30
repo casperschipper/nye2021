@@ -202,7 +202,7 @@ updateCell array (CharElem { x, y, value, messageChar }) =
             else
                 let
                     next =
-                        calcNeighbours x y array
+                        calcNeighbours x y array - (0.01 * value)
                 in
                 if (next < 0) || (next > 262144) then
                     charElem x y -1 messageChar
@@ -236,7 +236,7 @@ gray x =
             ( sin (w * 1.0), sin ((w * 1.5) + (tau / 3.0)), sin ((w * 3.0) + (tau / 3.0)) )
 
         int255 i =
-            i * 255.0 |> floor
+            i * 128.0 |> floor |> (+) 128
     in
     Attr.style "color" (rgb (int255 r) (int255 g) (int255 b))
 
@@ -266,13 +266,18 @@ gray x =
 --     in
 --     span [ gray value, onMouseEnter (OnMouseEnter x y) ] [ text (String.join " " [ "  -", xstr, ystr, vstr, "-  " ]) ]
 
+
 combi : Float -> String
 combi x =
-    let xx = x / 128.0 in
+    let
+        xx =
+            x / 128.0
+    in
     if xx > 128.0 then
-       charOfValue xx
-    else 
-       xx |> floor |> message
+        charOfValue xx
+
+    else
+        xx |> floor |> message
 
 
 viewChar : CharElem -> Html Msg
@@ -280,10 +285,10 @@ viewChar (CharElem { x, y, value, messageChar }) =
     let
         ( tint, str ) =
             if value < 32.0 then
-                ( 0, messageChar )
+                ( 0.0, messageChar )
 
             else if value == 0.0 then
-                ( 255.0, messageChar )
+                ( 0.0, messageChar )
 
             else
                 ( value, combi value )
@@ -361,7 +366,9 @@ view (Model t xss) =
                 |> Array.foldr Array.append Array.empty
     in
     div
-        [ Attr.style "font-family" "monospace"
+        [ Attr.style "background-color" "black"
+        , Attr.style "white-space" "nowrap"
+        , Attr.style "font-family" "monospace"
         , Attr.style "font-size" "24px"
         , Attr.style "line-height" "0.9em"
         , Attr.style "overflow-y" "hide"
@@ -369,4 +376,12 @@ view (Model t xss) =
         , Attr.style "width" "100%"
         , Attr.style "height" "100%"
         ]
-        (stars |> Array.toList)
+        ((stars |> Array.toList)
+            ++ [ Html.p
+                    [ Attr.style "color" "white"
+                    , Attr.style "display" "block"
+                    , Attr.style "height" "600px"
+                    ]
+                    [ text "hint: touch or move mouse!" ]
+               ]
+        )
