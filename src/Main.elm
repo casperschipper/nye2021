@@ -354,7 +354,7 @@ view (Model t xss) =
     in
     div
         [ Attr.style "font-family" "monospace"
-        , Attr.style "font-size" "12px"
+        , Attr.style "font-size" "24px"
         , Attr.style "line-height" "0.9em"
         , Attr.style "overflow-y" "hide"
         , Attr.style "overflow-x" "hide"
