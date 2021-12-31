@@ -63,23 +63,22 @@ main =
 init : ( Int, Int ) -> ( Model, Cmd Msg )
 init ( w, h ) =
     let
-        _ =
-            Debug.log "w,h" ( w, h )
+        (wn,hn) =( w // 24, h // 24)
 
         xss =
-            List.range 0 yRange
+            List.range 0 hn
                 |> List.map
                     (\y ->
-                        List.range 0 xRange
+                        List.range 0 wn
                             |> List.map
                                 (\x ->
-                                    charElem x y 0 (message (x + (y * xRange)))
+                                    charElem x y 0 (message (x + (y * wn)))
                                 )
                     )
                 |> List.map Array.fromList
                 |> Array.fromList
     in
-    ( Model (w,h) 0 xss, Cmd.none )
+    ( Model (wn,hn) 0 xss, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -127,8 +126,8 @@ resetCell cellX cellY (Model wh t xss) =
 
 getCoordinate : Int -> Int -> Array (Array CharElem) -> CharElem
 getCoordinate x y arr =
-    Array.get (modBy yRange y) arr
-        |> Maybe.andThen (\xarr -> Array.get (modBy xRange x) xarr)
+    Array.get (modBy (Array.length arr) y) arr
+        |> Maybe.andThen (\xarr -> Array.get (modBy (Array.length xarr) x) xarr)
         |> Maybe.withDefault (charElem 0 0 0.0 "*")
 
 
@@ -301,7 +300,7 @@ viewChar (CharElem { x, y, value, messageChar }) =
         [ gray tint
         , onMouseEnter (OnMouseEnter x y)
         , onClick (OnMouseEnter x y)
-        , Attr.style "width" "1.0em"
+        , Attr.style "width" "1.4em"
         , Attr.style "display" "inline-block"
         ]
         [ text str ]
