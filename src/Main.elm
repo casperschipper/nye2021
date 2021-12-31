@@ -21,14 +21,6 @@ message index =
     string |> String.toList |> Array.fromList |> Array.get safeIndex |> Maybe.withDefault '*' |> String.fromChar
 
 
-xRange : number
-xRange =
-    60
-
-
-yRange : number
-yRange =
-    36
 
 
 type CharElem
@@ -63,7 +55,7 @@ main =
 init : ( Int, Int ) -> ( Model, Cmd Msg )
 init ( w, h ) =
     let
-        (wn,hn) =( w // 24, h // 24)
+        (wn,hn) =( w // 33, h // 24)
 
         xss =
             List.range 0 hn
@@ -96,13 +88,13 @@ update msg model =
     case msg of
         OnAnimationFrame _ ->
             case model of
-                Model wh x xss ->
+                Model (w,h) x xss ->
                     case modBy 1 x of
                         0 ->
-                            xss |> Array.map (Array.map (updateCell xss)) |> (\m -> ( Model wh (x + 1) m, Cmd.none ))
+                            xss |> Array.map (Array.map (updateCell (w,h) (xss))) |> (\m -> ( Model (w,h) (x + 1) m, Cmd.none ))
 
                         _ ->
-                            ( Model wh (x + 1) xss, Cmd.none )
+                            ( Model (w,h) (x + 1) xss, Cmd.none )
 
         OnMouseEnter x y ->
             ( resetCell x y model, Cmd.none )
@@ -185,8 +177,8 @@ calcNeighbours x y arr =
         + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
 
 
-updateCell : Array (Array CharElem) -> CharElem -> CharElem
-updateCell array (CharElem { x, y, value, messageChar }) =
+updateCell : (Int,Int) -> Array (Array CharElem) -> CharElem -> CharElem
+updateCell (xRange,yRange) array (CharElem { x, y, value, messageChar }) =
     let
         old =
             charElem x y value messageChar
