@@ -6264,8 +6264,6 @@ var $author$project$Main$viewChar = function (_v0) {
 			]));
 };
 var $author$project$Main$view = function (_v0) {
-	var wh = _v0.a;
-	var t = _v0.b;
 	var xss = _v0.c;
 	var stars = A3(
 		$elm$core$Array$foldr,
