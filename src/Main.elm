@@ -3,7 +3,7 @@ module Main exposing (Model(..), Msg(..), main, message, rgb, update, view)
 import Array exposing (Array)
 import Browser
 import Browser.Events
-import Html exposing (Html, a, b, div, span, text)
+import Html exposing (Html, b, div, span, text)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick, onMouseEnter)
 import Time exposing (Posix)
@@ -36,10 +36,6 @@ charElem : Int -> Int -> Float -> String -> CharElem
 charElem x y v m =
     CharElem { x = x, y = y, value = v, messageChar = m }
 
-
-borderElem : CharElem
-borderElem =
-    CharElem { x = -1, y = -1, value = 0.0, messageChar = "" }
 
 type alias Dimensions = (Int,Int)
 
@@ -122,7 +118,7 @@ getCoordinate x y arr =
         |> Maybe.andThen (\xarr -> Array.get (modBy (Array.length xarr) x) xarr)
         |> Maybe.withDefault (charElem 0 0 0.0 "*")
 
-
+{-
 e : Float
 e =
     2.718281828459045
@@ -141,7 +137,7 @@ sinh x =
 tanh : Float -> Float
 tanh x =
     sinh x / cosh x
-
+-}
 
 calcNeighbours : Int -> Int -> Array (Array CharElem) -> Float
 calcNeighbours x y arr =
@@ -348,7 +344,7 @@ dropFirstAndLast arr =
 
 
 view : Model -> Html Msg
-view (Model wh t xss) =
+view (Model _ _ xss) =
     let
         stars : Array (Html Msg)
         stars =
