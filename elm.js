@@ -5590,7 +5590,7 @@ var $author$project$Main$resetCell = F3(
 			return $author$project$Main$CharElem(
 				{
 					messageChar: messageChar,
-					value: A2($elm$core$Basics$pow, 2, 20),
+					value: A2($elm$core$Basics$pow, 2, 21),
 					x: x,
 					y: y
 				});
@@ -5607,6 +5607,13 @@ var $author$project$Main$resetCell = F3(
 				cellY,
 				xss));
 	});
+var $elm$core$Basics$pi = _Basics_pi;
+var $elm$core$Basics$sin = _Basics_sin;
+var $author$project$Main$fromTime = function (t) {
+	var x = t / 1200;
+	var x2 = $elm$core$Basics$sin($elm$core$Basics$pi * x) * 0.006;
+	return x2;
+};
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
 		if (maybeValue.$ === 'Just') {
@@ -5644,8 +5651,8 @@ var $author$project$Main$getCoordinate = F3(
 						y),
 					arr)));
 	});
-var $author$project$Main$calcNeighbours = F3(
-	function (x, y, arr) {
+var $author$project$Main$calcNeighbours = F4(
+	function (t, x, y, arr) {
 		var topR = A3($author$project$Main$getCoordinate, x + 1, y - 1, arr);
 		var topL = A3($author$project$Main$getCoordinate, x - 1, y - 1, arr);
 		var top = A3($author$project$Main$getCoordinate, x, y - 1, arr);
@@ -5654,7 +5661,7 @@ var $author$project$Main$calcNeighbours = F3(
 		var bottomR = A3($author$project$Main$getCoordinate, x + 1, y + 1, arr);
 		var bottomL = A3($author$project$Main$getCoordinate, x - 1, y + 1, arr);
 		var bottom = A3($author$project$Main$getCoordinate, x, y + 1, arr);
-		var attenuate = 0.359;
+		var attenuate = 0.362 + $author$project$Main$fromTime(t);
 		return function (v) {
 			return (v / 5.0) * attenuate;
 		}(
@@ -5684,8 +5691,8 @@ var $author$project$Main$calcNeighbours = F3(
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var $author$project$Main$updateCell = F3(
-	function (_v0, array, _v1) {
+var $author$project$Main$updateCell = F4(
+	function (t, _v0, array, _v1) {
 		var xRange = _v0.a;
 		var yRange = _v0.b;
 		var x = _v1.a.x;
@@ -5705,7 +5712,7 @@ var $author$project$Main$updateCell = F3(
 				if (_Utils_eq(xx, xRange) || _Utils_eq(yy, yRange)) {
 					return old;
 				} else {
-					var next = A3($author$project$Main$calcNeighbours, x, y, array) - (0.01 * value);
+					var next = A4($author$project$Main$calcNeighbours, t, x, y, array) - (0.01 * value);
 					return ((next < 0) || (next > 262144)) ? A4($author$project$Main$charElem, x, y, -1, messageChar) : A4($author$project$Main$charElem, x, y, next, messageChar);
 				}
 			}
@@ -5733,8 +5740,9 @@ var $author$project$Main$update = F2(
 					A2(
 						$elm$core$Array$map,
 						$elm$core$Array$map(
-							A2(
+							A3(
 								$author$project$Main$updateCell,
+								x,
 								_Utils_Tuple2(w, h),
 								xss)),
 						xss));
@@ -6145,6 +6153,7 @@ var $author$project$Main$dropFirstAndLast = function (arr) {
 	var n = $elm$core$Array$length(arr);
 	return (n < 3) ? arr : A3($elm$core$Array$slice, 1, -1, arr);
 };
+var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
@@ -6168,7 +6177,6 @@ var $author$project$Main$combi = function (x) {
 	return (xx > 128.0) ? $author$project$Main$charOfValue(xx) : $author$project$Main$message(
 		$elm$core$Basics$floor(xx));
 };
-var $elm$core$Basics$pi = _Basics_pi;
 var $elm$core$String$concat = function (strings) {
 	return A2($elm$core$String$join, '', strings);
 };
@@ -6188,7 +6196,6 @@ var $author$project$Main$rgb = F3(
 				f(green),
 				f(blue)));
 	});
-var $elm$core$Basics$sin = _Basics_sin;
 var $author$project$Main$gray = function (x) {
 	var xf = x / 262144.0;
 	var tau = 2 * $elm$core$Basics$pi;
@@ -6264,7 +6271,10 @@ var $author$project$Main$viewChar = function (_v0) {
 			]));
 };
 var $author$project$Main$view = function (_v0) {
+	var x = _v0.b;
 	var xss = _v0.c;
+	var t = $author$project$Main$fromTime(x);
+	var time = 'timeoffset = ' + $elm$core$String$fromFloat(t);
 	var stars = A3(
 		$elm$core$Array$foldr,
 		$elm$core$Array$append,
@@ -6306,7 +6316,7 @@ var $author$project$Main$view = function (_v0) {
 						]),
 					_List_fromArray(
 						[
-							$elm$html$Html$text('hint: touch or move mouse!')
+							$elm$html$Html$text('Hint: touch or move mouse!')
 						]))
 				])));
 };

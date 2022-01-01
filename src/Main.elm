@@ -87,7 +87,7 @@ update msg model =
                 Model (w,h) x xss ->
                     case modBy 1 x of
                         0 ->
-                            xss |> Array.map (Array.map (updateCell (w,h) (xss))) |> (\m -> ( Model (w,h) (x + 1) m, Cmd.none ))
+                            xss |> Array.map (Array.map (updateCell x (w,h) (xss))) |> (\m -> ( Model (w,h) (x + 1) m, Cmd.none ))
 
                         _ ->
                             ( Model (w,h) (x + 1) xss, Cmd.none )
@@ -107,7 +107,7 @@ resetCell : Int -> Int -> Model -> Model
 resetCell cellX cellY (Model wh t xss) =
     let
         myF (CharElem { x, y, messageChar }) =
-            CharElem { x = x, y = y, value = 2 ^ 20 |> toFloat, messageChar = messageChar }
+            CharElem { x = x, y = y, value = 2 ^ 21 |> toFloat, messageChar = messageChar }
     in
     Model  wh t (updateAtIndex (\ys -> updateAtIndex myF cellX ys) cellY xss)
 
@@ -139,8 +139,17 @@ tanh x =
     sinh x / cosh x
 -}
 
-calcNeighbours : Int -> Int -> Array (Array CharElem) -> Float
-calcNeighbours x y arr =
+fromTime : Int -> Float 
+fromTime t =
+    let x = (toFloat t) / 1200
+
+        x2 = sin(pi*x) * 0.006
+    in
+    x2
+
+
+calcNeighbours : Int -> Int -> Int -> Array (Array CharElem) -> Float
+calcNeighbours t x y arr =
     let
         top =
             getCoordinate x (y - 1) arr
@@ -167,14 +176,14 @@ calcNeighbours x y arr =
             getCoordinate (x - 1) y arr
 
         attenuate =
-            0.359
+            0.362 + (fromTime t)
     in
     ([ bottomL, bottomR, topL, topR ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 5.0) * attenuate))
         + ([ top, right, bottom, left ] |> List.foldr (\(CharElem { value }) acc -> value + acc) 0.0 |> (\v -> (v / 2.0) * attenuate))
 
 
-updateCell : (Int,Int) -> Array (Array CharElem) -> CharElem -> CharElem
-updateCell (xRange,yRange) array (CharElem { x, y, value, messageChar }) =
+updateCell : Int -> (Int,Int) -> Array (Array CharElem) -> CharElem -> CharElem
+updateCell t (xRange,yRange) array (CharElem { x, y, value, messageChar }) =
     let
         old =
             charElem x y value messageChar
@@ -193,7 +202,7 @@ updateCell (xRange,yRange) array (CharElem { x, y, value, messageChar }) =
             else
                 let
                     next =
-                        calcNeighbours x y array - (0.01 * value)
+                        calcNeighbours t x y array - (0.01 * value)
                 in
                 if (next < 0) || (next > 262144) then
                     charElem x y -1 messageChar
@@ -344,7 +353,7 @@ dropFirstAndLast arr =
 
 
 view : Model -> Html Msg
-view (Model _ _ xss) =
+view (Model _ x xss) =
     let
         stars : Array (Html Msg)
         stars =
@@ -355,6 +364,10 @@ view (Model _ _ xss) =
                     )
                 |> dropFirstAndLast
                 |> Array.foldr Array.append Array.empty
+
+        t = fromTime x
+
+        time = "timeoffset = " ++ String.fromFloat t
     in
     div
         [ Attr.style "background-color" "black"
@@ -373,6 +386,6 @@ view (Model _ _ xss) =
                     , Attr.style "display" "block"
                     , Attr.style "height" "600px"
                     ]
-                    [ text "hint: touch or move mouse!" ]
+                    [ text ("Hint: touch or move mouse!") ]
                ]
         )
